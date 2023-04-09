@@ -6,7 +6,7 @@ from matplotlib import pyplot as plt
 from matplotlib import patches
 from copy import deepcopy
 from dataclasses import make_dataclass
-from MM_Plot_Utils import plot
+from maze_utils.MM_Plot_Utils import plot
 
 # Maze-related routines
 
@@ -89,8 +89,16 @@ def NewMaze(n=6): # n must be even for square maze
     ma.di = ConnectDistance(ma)
     ma.cl = MazeCenter(ma)
     ma.wa = MazeWall(ma)
+    ma.wall_midpoints = get_wall_midpoints(ma)
     ma.st = MakeStepType(ma)
     return ma
+
+def get_wall_midpoints(maze):
+    """Returns coordinates of midpoints between wall line segments"""
+    midpoints = []
+    for i in range(1, len(maze.wa)):
+        midpoints.append(list((maze.wa[i - 1] + maze.wa[i]) / 2))
+    return midpoints
 
 def RunIndex(c,m):
     '''
@@ -285,7 +293,7 @@ def PlotMazeWall(m,axes=None,figsize=4):
     figsize: in inches (only if axes=None)
     '''
     if axes:
-        plot(m.wa[:,0],m.wa[:,1],fmts=['k-'],equal=True,linewidth=2,
+        axes = plot(m.wa[:,0],m.wa[:,1],fmts=['k-'],equal=True,linewidth=2,
              xhide=True,yhide=True,axes=axes) # this way we can add to an existing graph
     else:
         axes = plot(m.wa[:,0],m.wa[:,1],fmts=['k-'],equal=True,linewidth=2,yflip=True,
@@ -377,7 +385,7 @@ def PlotMazeCells(m,numcol='blue',figsize=6):
     numcol: color for the numbers. If numcol is None the numbers are omitted
     figsize: in inches
     '''
-    PlotMazeFunction(None,m,mode='cells',numcol=numcol,figsize=figsize,col=None)
+    return PlotMazeFunction(None,m,mode='cells',numcol=numcol,figsize=figsize,col=None)
     
 def PlotMazeRuns(m,numcol='blue',figsize=6):
     '''
@@ -385,7 +393,7 @@ def PlotMazeRuns(m,numcol='blue',figsize=6):
     numcol: color for the numbers. If numcol is None the numbers are omitted
     figsize: in inches
     '''
-    PlotMazeFunction(None,m,mode='runs',numcol=numcol,figsize=figsize,col=None)
+    return PlotMazeFunction(None,m,mode='runs',numcol=numcol,figsize=figsize,col=None)
     
 def PlotMazeNodes(m,numcol='blue',figsize=6):
     '''
@@ -393,7 +401,7 @@ def PlotMazeNodes(m,numcol='blue',figsize=6):
     numcol: color for the numbers. If numcol is None the numbers are omitted
     figsize: in inches
     '''
-    PlotMazeFunction(None,m,mode='nodes',numcol=numcol,figsize=figsize,col=None)
+    return PlotMazeFunction(None,m,mode='nodes',numcol=numcol,figsize=figsize,col=None)
     
 def NodeLevel(n):
     '''

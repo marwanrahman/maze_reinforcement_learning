@@ -99,11 +99,11 @@ def hist(X, bins=50, range=None, density=None, weights=None, histtype='stepfille
     axes: pre-existing axes where to draw the plot
     Returns: axes, n, bins, patches 
     """
-    
+
     if not axes: # start a new figure
         fig = plt.figure(figsize=figsize)
         axes = plt.gca()
-    
+
     def has_one_axis(X): # Return True if X (ndarray or list) has 1 axis
         return (hasattr(X, "ndim") and X.ndim == 1 or isinstance(X, list)
                 and not hasattr(X[0], "__len__"))
@@ -112,23 +112,23 @@ def hist(X, bins=50, range=None, density=None, weights=None, histtype='stepfille
         ndata=1
     else:
         ndata=len(X) # assuming it is an ndarray or a list of lists
-    
+
     if len(color)<ndata: # if there aren't enough colors provided
         col=None # use the default color sequence
     else:
         col=color[:ndata]
-    
+
     if histtype=='step' or histtype=='stepfilled': # in these cases the legend sequence needs to be inverted for some reason
         if isinstance(legend, list):
-        	legend = legend[-1::-1]
-    
+            legend = legend[-1::-1]
+
     n, bins, patches = axes.hist(X, bins=bins, range=range, density=density, weights=weights, 
-    		histtype=histtype, stacked=stacked, align=align, 
+            histtype=histtype, stacked=stacked, align=align, 
             color=col, alpha=alpha, linewidth=linewidth,
             label=legend, orientation=orientation)
 
     set_axes(axes, xlabel, ylabel, legend, loc, xlim, ylim, xscale, yscale, 
-    	xticks, yticks, xhide, yhide, yrot, yzero, yflip, grid, equal=False)
+        xticks, yticks, xhide, yhide, yrot, yzero, yflip, grid, equal=False)
 
     if title:
         plt.title(title)

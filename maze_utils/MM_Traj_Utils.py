@@ -5,8 +5,8 @@ from matplotlib import pyplot as plt
 from matplotlib import patches
 from copy import deepcopy
 from dataclasses import make_dataclass
-from MM_Plot_Utils import plot
-from MM_Maze_Utils import *
+from maze_utils.MM_Plot_Utils import plot
+from maze_utils.MM_Maze_Utils import *
 
 # Trajectory routines 
 Traj = make_dataclass('Traj', ['fr','ce','ke','no','re']) # a simple structure for trajectory data 
