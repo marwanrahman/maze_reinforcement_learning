@@ -44,7 +44,7 @@ class Agent:
             action = max(self.q_values[observation], key=self.q_values[observation].get) 
         return action
         
-    def update(self, observation, action, reward, next_observation):
+    def Q_update(self, observation, action, reward, next_observation):
         """Updates the Q values after taking an action in the environment
 
         Parameters:
@@ -61,4 +61,13 @@ class Agent:
         # Write the update rule for Q(s, a)
         self.q_values[observation][action] += self.lr * td_loss
         self.td_history.append(td_loss)
+                
+    def SARSA_update(self, observation, action, reward, next_observation, next_action):
+        td_loss = reward + ((self.discount_factor * self.q_values[next_observation][next_action]) - (self.q_values[observation][action]))
+        self.q_values[observation][action] += self.lr*td_loss
+        self.td_history.append(td_loss)
+        
+        
+        
+        
 
