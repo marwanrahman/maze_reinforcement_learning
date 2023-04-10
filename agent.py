@@ -35,7 +35,7 @@ class Agent:
 
         Returns:
         --------
-        action: int, selected action the agent will perform
+        action: Action, selected action the agent will perform
         """
         # epsilon greedy sampling action sampling
         if random.uniform(0, 1) < self.epsilon:
@@ -50,9 +50,8 @@ class Agent:
         Parameters:
         -----------
         observation: int, obesrvation of the agent's state from the environment
-        action: int, action the agent selected to perform
+        action: Action, action the agent selected to perform
         reward: float, the reward of performing the action from the environment
-        terminated: bool, whether the episode has been terminated by reaching the end or taking too long
         next_observation: int, the next observation the agent will receive after performing its action
         """
         # Compute the TD loss for Q-learing
@@ -63,6 +62,15 @@ class Agent:
         self.td_history.append(td_loss)
                 
     def SARSA_update(self, observation, action, reward, next_observation, next_action):
+        """Updates the Q values after taking an action in the environment using SARSA
+
+        Parameters:
+        -----------
+        observation: int, obesrvation of the agent's state from the environment
+        action: Action, action the agent selected to perform
+        reward: float, the reward of performing the action from the environment
+        next_observation: int, the next observation the agent will receive after performing its action
+        """
         td_loss = reward + ((self.discount_factor * self.q_values[next_observation][next_action]) - (self.q_values[observation][action]))
         self.q_values[observation][action] += self.lr*td_loss
         self.td_history.append(td_loss)

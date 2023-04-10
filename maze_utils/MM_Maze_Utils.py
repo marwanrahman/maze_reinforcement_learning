@@ -318,7 +318,7 @@ def PlotMazeNums(m,axes,mode='cells',numcol='blue'):
     if mode=='runs':
         for j,r in enumerate(m.ru):
             xlo = min(m.xc[r]); xhi = max(m.xc[r]); ylo = min(m.yc[r]); yhi = max(m.yc[r])
-            ax.add_patch(patches.Rectangle((xlo-0.5,ylo-0.5),xhi-xlo+1,yhi-ylo+1,lw=1,fill=False)) 
+            axes.add_patch(patches.Rectangle((xlo-0.5,ylo-0.5),xhi-xlo+1,yhi-ylo+1,lw=1,fill=False)) 
             x = 0.5*(m.xc[r[0]]+m.xc[r[-1]])-0.35; y = 0.5*(m.yc[r[0]]+m.yc[r[-1]])+0.15
             plt.text(x,y,'{:d}'.format(j),color=numcol)             
 
