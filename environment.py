@@ -41,6 +41,12 @@ class Environment:
             print("Move not allowed!")
             return
         
+        reward = self.get_reward(action)
+        self.visited.add(self.current_cell)
+        return self.current_cell, reward, self.status
+    
+    def get_reward(self, action):
+        """determine the reward of taking the given action"""
         reward = 0
         if self.last_turn is not None:
             moves_dict = {Action.MOVE_RIGHT: 1, Action.MOVE_DOWN: 2, Action.MOVE_LEFT: 3, Action.MOVE_UP: 4}
@@ -81,9 +87,7 @@ class Environment:
         elif self.current_cell in self.visited: # penalty for going to a cell already visited
             reward = -0.25
 
-        self.visited.add(self.current_cell)
-
-        return self.current_cell, reward, self.status
+        return reward
 
     def sample_actions(self):
         """randomly sample an action from allowable actions for current cell"""
