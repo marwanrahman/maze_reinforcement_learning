@@ -8,6 +8,10 @@ class Action(Enum):
     MOVE_UP = [0, -1]
     MOVE_DOWN = [0, 1]
 
+class Turn(Enum):
+    RIGHT_TURN = -1
+    LEFT_TURN = 1
+
 class Status(Enum):
     SEARCHING = 0
     WATER_REACHED = 1
@@ -19,6 +23,9 @@ class Environment:
         self.n_cells = len(self.cell_actions)
         self.current_cell = 0
         self.visited = set()
+        self.last_turn = None
+        self.last_action = Action.MOVE_RIGHT
+        self.current_run = 0 # counts number of times current action has been taken
         self.status = Status.SEARCHING
 
     def reset(self):
@@ -34,6 +41,37 @@ class Environment:
             print("Move not allowed!")
             return
         
+        reward = 0
+        if self.last_turn is not None:
+            moves_dict = {Action.MOVE_RIGHT: 1, Action.MOVE_DOWN: 2, Action.MOVE_LEFT: 3, Action.MOVE_UP: 4}
+
+            diff = moves_dict[self.last_action] % len(moves_dict) - moves_dict[action] % len(moves_dict)
+            # same as last turn, negative reward
+            if diff == self.last_turn.value:
+                reward = -0.1
+                self.current_run = 0
+            # moving forward
+            elif diff == 0:
+                self.current_run += 1
+            # moving opposite direction
+            else:
+                self.current_run = 0
+            
+            if diff in [-1, 1]:
+                self.last_turn = Turn(diff)
+        else:
+            # right turn at the start
+            if action == Action.MOVE_DOWN:
+                self.last_turn = Turn.RIGHT_TURN
+            # left turn
+            elif action == Action.MOVE_UP:
+                self.last_turn = Turn.LEFT_TURN
+
+        if self.current_run >= 4:
+            # penalize moving ahead instead of making a turn at a junction (if it has been moving straight for a while)
+            if len(self.cell_actions[self.current_cell]) > 1 and action == self.last_action:
+                reward = -0.1
+
         next_coord = np.add(action.value, [self.maze.xc[self.current_cell], self.maze.yc[self.current_cell]])
         self.current_cell = self.maze.ce[tuple(next_coord)]
 
@@ -42,8 +80,6 @@ class Environment:
             self.status = Status.WATER_REACHED
         elif self.current_cell in self.visited: # penalty for going to a cell already visited
             reward = -0.25
-        else:
-            reward = 0
 
         self.visited.add(self.current_cell)
 
