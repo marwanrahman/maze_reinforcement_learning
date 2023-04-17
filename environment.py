@@ -33,6 +33,9 @@ class Environment:
         self.current_cell = 0
         self.visited = set()
         self.status = Status.SEARCHING
+        self.current_run = 0
+        self.last_action = Action.MOVE_RIGHT
+        self.last_turn = None
         return self.current_cell
     
     def step(self, action):
