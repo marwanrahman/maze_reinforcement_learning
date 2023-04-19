@@ -27,7 +27,7 @@ class Environment:
         self.metrics['Total # of actions'] += 1
 
         # check if dead end
-        if len(self.cell_actions) > 1:
+        if len(self.cell_actions[self.current_cell]) > 1:
             self.metrics['# of actions w/o dead ends'] += 1
 
         # corridor
