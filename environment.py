@@ -1,6 +1,7 @@
 from enum import Enum
 import numpy as np
 from random import sample
+import pandas as pd
 
 class Action(Enum):
     MOVE_LEFT = [-1, 0]
@@ -19,6 +20,7 @@ class Status(Enum):
 class Environment:
     def __init__(self, maze) -> None:
         self.maze = maze
+        self.metrics = None
         self.cell_actions = self.generate_cell_actions()
         self.n_cells = len(self.cell_actions)
         self.reset()
@@ -206,3 +208,16 @@ class Environment:
 
         return moves
     
+    
+    def convert_to_df(self, episode):
+        
+        dictionary = self.metrics
+        
+        dictionary['# of visits for each visited node'] = pd.Series(dictionary['# of visits for each visited node'])
+        dictionary['# of visits for each visited node before water'] = pd.Series(dictionary['# of visits for each visited node before water'])
+        
+        # Convert entire dictionary into dataframe
+        df = pd.DataFrame.from_dict(dictionary, orient='index').T
+        df = df.rename(index={0: episode}, inplace=False)
+
+        return df

@@ -4,6 +4,7 @@ from agent import Agent
 from maze_utils.MM_Maze_Utils import *
 from matplotlib import pyplot as plt
 from plotting import plot_path
+import pandas as pd
 
 maze = NewMaze(6)
 env = Environment(maze)
@@ -11,6 +12,8 @@ agent = Agent(env, learning_rate=0.1, epsilon=0.1)
 
 n_episodes = 500
 save_episodes = [0, 1, 5, 10, 50, 100, 200, 500, 1000, 10000]
+
+metrics_list = []
 
 policy = 'SARSA'
 
@@ -35,8 +38,11 @@ for episode in tqdm(range(n_episodes)):
         done = status == Status.WATER_REACHED
         obs = next_obs
         path.append(obs)
+    metrics = env.convert_to_df(episode)
+    metrics_list.append(metrics)
     if episode in save_episodes:
         agent.q_history[episode] = (agent.q_values.copy(), path)
         plot_path(maze, path)
-        print(env.metrics)
         print("plotted!")
+        
+df = pd.concat(metrics_list)
