@@ -21,21 +21,103 @@ class Environment:
         self.maze = maze
         self.cell_actions = self.generate_cell_actions()
         self.n_cells = len(self.cell_actions)
-        self.current_cell = 0
-        self.visited = set()
-        self.last_turn = None
-        self.last_action = Action.MOVE_RIGHT
-        self.current_run = 0 # counts number of times current action has been taken
-        self.status = Status.SEARCHING
+        self.reset()
+
+    def update_metrics(self, action, diff):
+        self.metrics['Total # of actions'] += 1
+
+        # check if dead end
+        if len(self.cell_actions) > 1:
+            self.metrics['# of actions w/o dead ends'] += 1
+
+        # corridor
+        if self.current_cell not in self.nodes:
+            self.metrics['# of corridor actions'] += 1
+
+            if self.last_action == action:
+                self.metrics['corridor actions']['straight'] += 1
+            else:
+                self.metrics['corridor actions']['turn around'] += 1
+        # node
+        else:
+            self.metrics['# of node actions'] += 1
+
+            if diff == Turn.LEFT_TURN.value:
+                self.metrics['node actions']['left turn'] += 1
+            elif diff == Turn.RIGHT_TURN.value:
+                self.metrics['node actions']['right turn'] += 1
+            elif diff == 0:
+                self.metrics['node actions']['straight through node'] += 1
+            else:
+                self.metrics['node actions']['node turn around'] += 1
+
+        # consecutive turns
+        if self.last_turn.value == diff:
+            if self.consecutive_turn_count not in self.metrics['consecutive turns']:
+                self.metrics['consecutive turns'][self.consecutive_turn_count]  = 1
+            else:
+                self.metrics['consecutive turns'][self.consecutive_turn_count] += 1
+
+            if self.consecutive_turn_count > 1:
+                self.metrics['consecutive turns'][self.consecutive_turn_count - 1] -= 1
+
+        # unique nodes
+        self.metrics['total # of unique nodes visisted'] = len(self.visited_nodes)
+        self.metrics["total # of unique nodes visisted before water"] = len(self.visited_nodes)
+
+        # node visites
+        if self.current_cell in self.nodes:
+            self.metrics["# of visits for each visited node"][self.nodes.index(self.current_cell)] += 1
+            self.metrics["# of visits for each visited node before water"][self.nodes.index(self.current_cell)] += 1
+
+
+        # "% of each corridor action"
+        total_corridor = 0
+        for key, value in self.metrics['corridor actions'].items():
+            total_corridor += value
+        if total_corridor > 0:
+            for key, value in self.metrics['corridor actions'].items():
+                self.metrics["% of each corridor action"][key] = round(value * 100 / total_corridor, 2)
+
+        # % of each node action
+        if self.metrics['# of node actions'] > 0:
+            for key, value in self.metrics['node actions'].items():
+                self.metrics['% of each node action'][key] = round(value * 100 / self.metrics['# of node actions'], 2)
+
+        # % of consecutive turn intervals
+        total_consec_turns = 0
+        for key, value in self.metrics['consecutive turns'].items():
+            total_consec_turns += value
+        if total_consec_turns > 0:
+            for key, value in self.metrics['consecutive turns'].items():
+                self.metrics["% of consecutive turn intervals"][key] = round(value * 100 / total_consec_turns, 2)
 
     def reset(self):
         """Reset the environment"""
         self.current_cell = 0
-        self.visited = set()
-        self.status = Status.SEARCHING
-        self.current_run = 0
-        self.last_action = Action.MOVE_RIGHT
+        self.visited_cells = set()
+        self.visited_nodes = set()
         self.last_turn = None
+        self.last_action = Action.MOVE_RIGHT
+        self.current_run = 0 # counts number of times current action has been taken
+        self.status = Status.SEARCHING
+        self.nodes = [x[-1] for x in self.maze.ru]
+        self.consecutive_turn_count = 0
+        self.metrics = {'Total # of actions': 0,
+                        '# of actions w/o dead ends': 0,
+                        '# of corridor actions': 0, 
+                        '# of node actions': 0,
+                        'corridor actions': {'straight': 0, 'turn around': 0},
+                        'node actions': {'left turn': 0, 'right turn': 0, 'straight through node': 0, 'node turn around': 0},
+                        'consecutive turns': {},
+                        "% of each corridor action": {}, 
+                        "% of each node action": {},
+                        "% of consecutive turn intervals": {}, 
+                        "total # of unique nodes visisted": 0,
+                        "# of visits for each visited node": np.zeros(len(self.nodes)), 
+                        "water_reached": True,
+                        "total # of unique nodes visisted before water": 0,
+                        "# of visits for each visited node before water": np.zeros(len(self.nodes))}
         return self.current_cell
     
     def step(self, action):
@@ -44,8 +126,14 @@ class Environment:
             print("Move not allowed!")
             return
         
+        if self.current_cell in self.nodes:
+            self.visited_nodes.add(self.current_cell)
+        
         reward = self.get_reward(action)
-        self.visited.add(self.current_cell)
+
+
+        self.visited_cells.add(self.current_cell)
+        self.last_action = action
         return self.current_cell, reward, self.status
     
     def get_reward(self, action):
@@ -55,16 +143,15 @@ class Environment:
             moves_dict = {Action.MOVE_RIGHT: 1, Action.MOVE_DOWN: 2, Action.MOVE_LEFT: 3, Action.MOVE_UP: 4}
 
             diff = moves_dict[self.last_action] % len(moves_dict) - moves_dict[action] % len(moves_dict)
+
+            self.update_metrics(action, diff)
+
             # same as last turn, negative reward
             if diff == self.last_turn.value:
                 reward = -0.1
-                self.current_run = 0
-            # moving forward
-            elif diff == 0:
-                self.current_run += 1
-            # moving opposite direction
-            else:
-                self.current_run = 0
+                self.consecutive_turn_count +=1
+            elif self.current_cell in self.nodes and diff != self.last_turn.value:
+                self.consecutive_turn_count = 0
             
             if diff in [-1, 1]:
                 self.last_turn = Turn(diff)
@@ -76,10 +163,9 @@ class Environment:
             elif action == Action.MOVE_UP:
                 self.last_turn = Turn.LEFT_TURN
 
-        if self.current_run >= 4:
-            # penalize moving ahead instead of making a turn at a junction (if it has been moving straight for a while)
-            if len(self.cell_actions[self.current_cell]) > 1 and action == self.last_action:
-                reward = -0.1
+        if self.current_cell in self.nodes and len(self.cell_actions[self.current_cell]) > 1 and action == self.last_action:
+            # penalize moving ahead instead of making a turn at a junction
+            reward = -0.1
 
         next_coord = np.add(action.value, [self.maze.xc[self.current_cell], self.maze.yc[self.current_cell]])
         self.current_cell = self.maze.ce[tuple(next_coord)]
@@ -87,7 +173,7 @@ class Environment:
         if self.current_cell == 165: # reached water
             reward = 10
             self.status = Status.WATER_REACHED
-        elif self.current_cell in self.visited: # penalty for going to a cell already visited
+        elif self.current_cell in self.visited_cells: # penalty for going to a cell already visited
             reward = -0.25
 
         return reward

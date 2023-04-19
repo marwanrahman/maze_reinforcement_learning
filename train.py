@@ -38,4 +38,5 @@ for episode in tqdm(range(n_episodes)):
     if episode in save_episodes:
         agent.q_history[episode] = (agent.q_values.copy(), path)
         plot_path(maze, path)
+        print(env.metrics)
         print("plotted!")
