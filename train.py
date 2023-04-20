@@ -19,6 +19,7 @@ policy = 'SARSA'
 
 for episode in tqdm(range(n_episodes)):
     obs = env.reset()
+    agent.epsilon *= 0.95
     done = False
     path = [obs]
     while not done:
@@ -46,3 +47,4 @@ for episode in tqdm(range(n_episodes)):
         print("plotted!")
         
 df = pd.concat(metrics_list)
+df.to_csv('output.csv')
